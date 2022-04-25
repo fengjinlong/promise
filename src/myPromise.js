@@ -59,20 +59,53 @@ var myPromise = /** @class */ (function () {
                 : function (reason) {
                     throw reason;
                 };
-        if (this.PromiseState === myPromise.FULFILLED) {
-            setTimeout(function () {
-                onFulfilled(_this.PromiseResult);
-            });
-        }
-        if (this.PromiseState === myPromise.REJECTED) {
-            setTimeout(function () {
-                onRejected(_this.PromiseResult);
-            });
-        }
-        if (this.PromiseState === myPromise.PENDING) {
-            this.onFulfilledCallbacks.push(onFulfilled);
-            this.onRejectedCallbacks.push(onRejected);
-        }
+        var promise2 = new myPromise(function (resolve, reject) {
+            if (_this.PromiseState === myPromise.FULFILLED) {
+                setTimeout(function () {
+                    try {
+                        var x = onFulfilled(_this.PromiseResult); // 2271
+                        resolvePromise(promise2, x, resolve, reject);
+                    }
+                    catch (e) {
+                        reject(e); // 2272
+                    }
+                });
+            }
+            else if (_this.PromiseState === myPromise.REJECTED) {
+                setTimeout(function () {
+                    try {
+                        var x = onRejected(_this.PromiseResult);
+                        resolvePromise(promise2, x, resolve, reject);
+                    }
+                    catch (e) {
+                        reject(e); // 2272
+                    }
+                });
+            }
+            else if (_this.PromiseState === myPromise.PENDING) {
+                // 2271 2272
+                // 解决异步调用
+                _this.onFulfilledCallbacks.push(function () {
+                    try {
+                        var x = onFulfilled(_this.PromiseResult); // 2271
+                        resolvePromise(promise2, x, resolve, reject);
+                    }
+                    catch (e) {
+                        reject(e); // 2272
+                    }
+                });
+                _this.onRejectedCallbacks.push(function () {
+                    try {
+                        var x = onRejected(_this.PromiseResult);
+                        resolvePromise(promise2, x, resolve, reject);
+                    }
+                    catch (e) {
+                        reject(e); // 2272
+                    }
+                });
+            }
+        });
+        return promise2;
     };
     // 状态
     myPromise.PENDING = "pending";
@@ -81,6 +114,99 @@ var myPromise = /** @class */ (function () {
     return myPromise;
 }());
 exports.myPromise = myPromise;
+/**
+ * 对resolve()、reject() 进行改造增强 针对resolve()和reject()中不同值情况 进行处理
+ * @param  {promise} promise2 promise1.then方法返回的新的promise对象
+ * @param  {[type]} x         promise1中onFulfilled或onRejected的返回值
+ * @param  {[type]} resolve   promise2的resolve方法
+ * @param  {[type]} reject    promise2的reject方法
+ */
+function resolvePromise(promise2, x, resolve, reject) {
+    // 如果从onFulfilled或onRejected中返回的 x 就是promise2，会导致循环引用报错
+    if (x === promise2) {
+        // 231
+        return reject(new TypeError("Chaining cycle detected for promise"));
+    }
+    // 2.3.2 如果 x 为 Promise ，则使 promise2 接受 x 的状态
+    if (x instanceof myPromise) {
+        if (x.PromiseState === myPromise.PENDING) {
+            /**
+             * 2.3.2.1 如果 x 处于等待态， promise 需保持为等待态直至 x 被执行或拒绝
+             *         注意"直至 x 被执行或拒绝"这句话，
+             *         这句话的意思是：x 被执行x，如果执行的时候拿到一个y，还要继续解析y
+             */
+            x.then(function (y) {
+                resolvePromise(promise2, y, resolve, reject);
+            }, reject);
+        }
+        else if (x.PromiseState === myPromise.FULFILLED) {
+            // 2.3.2.2 如果 x 处于执行态，用相同的值执行 promise
+            resolve(x.PromiseResult);
+        }
+        else if (x.PromiseState === myPromise.REJECTED) {
+            // 2.3.2.3 如果 x 处于拒绝态，用相同的据因拒绝 promise
+            reject(x.PromiseResult);
+        }
+    }
+    else if (x !== null && (typeof x === "object" || typeof x === "function")) {
+        // 2.3.3 如果 x 为对象或函数
+        try {
+            // 2.3.3.1 把 x.then 赋值给 then
+            var then = x.then;
+        }
+        catch (e) {
+            // 2.3.3.2 如果取 x.then 的值时抛出错误 e ，则以 e 为据因拒绝 promise
+            return reject(e);
+        }
+        /**
+         * 2.3.3.3
+         * 如果 then 是函数，将 x 作为函数的作用域 this 调用之。
+         * 传递两个回调函数作为参数，
+         * 第一个参数叫做 `resolvePromise` ，第二个参数叫做 `rejectPromise`
+         */
+        if (typeof then === "function") {
+            // 2.3.3.3.3 如果 resolvePromise 和 rejectPromise 均被调用，或者被同一参数调用了多次，则优先采用首次调用并忽略剩下的调用
+            var called_1 = false; // 避免多次调用
+            try {
+                // 2.3.3.3
+                then.call(x, function (y) {
+                    if (called_1)
+                        return;
+                    called_1 = true;
+                    // 2.3.3.3.1 如果 `resolvePromise` 以值 `y` 为参数被调用，则运行 `[[Resolve]](promise, y)`
+                    resolvePromise(promise2, y, resolve, reject);
+                }, function (r) {
+                    if (called_1)
+                        return;
+                    called_1 = true;
+                    // 2.3.3.3.2 如果 `rejectPromise` 以据因 `r` 为参数被调用，则以据因 `r` 拒绝 `promise`
+                    reject(r);
+                });
+            }
+            catch (e) {
+                /**
+                 * 2.3.3.3.4 如果调用 then 方法抛出了异常 e
+                 * 2.3.3.3.4.1 如果 resolvePromise 或 rejectPromise 已经被调用，则忽略之
+                 */
+                if (called_1)
+                    return;
+                called_1 = true;
+                /**
+                 * 2.3.3.3.4.2 否则以 e 为据因拒绝 promise
+                 */
+                reject(e);
+            }
+        }
+        else {
+            // 2.3.3.4 如果 then 不是函数，以 x 为参数执行 promise
+            resolve(x);
+        }
+    }
+    else {
+        // 2.3.4 如果 x 不为对象或者函数，以 x 为参数执行 promise
+        return resolve(x);
+    }
+}
 // todo then 的参数
 // then方法可以传入两个参数，
 // 这两个参数都是函数，一个是当状态为fulfilled 成功 时执行的代码，另一个是当状态为 rejected 拒绝 时执行的代码。
@@ -215,9 +341,8 @@ var p1 = new myPromise(function (resolve, reject) {
     resolve(10);
 });
 p1.then(function (res) {
-    console.log('fulfilled', res);
+    console.log("fulfilled", res);
     return 2 * res;
+}).then(function (res) {
+    console.log("fulfilled", res);
 });
-// }).then(res => {
-//   console.log('fulfilled', res)
-// }) 
