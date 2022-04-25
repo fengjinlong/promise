@@ -1,0 +1,8 @@
+{
+  "name": "promise",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:fengjinlong/promise.git",
+  "author": "fjl <18618166564@163.com>",
+  "license": "MIT"
+}
