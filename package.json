@@ -6,12 +6,20 @@
   "author": "fjl <18618166564@163.com>",
   "license": "MIT",
   "scripts": {
-    "test": "promises-aplus-tests ./src/myPromise"
+    "test": "promises-aplus-tests ./src/myPromise",
+    "testApi": "jest"
   },
   "devDependencies": {
+    "@babel/core": "^7.17.9",
+    "@babel/preset-env": "^7.16.11",
+    "@types/jest": "^27.4.1",
+    "babel-jest": "^28.0.0",
     "promises-aplus-tests": "^2.1.2"
   },
   "dependencies": {
-    "@types/node": "^17.0.27"
+    "@babel/preset-typescript": "^7.16.7",
+    "@types/node": "^17.0.27",
+    "jest": "^28.0.0",
+    "typescript": "^4.6.3"
   }
 }

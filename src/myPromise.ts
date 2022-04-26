@@ -9,6 +9,8 @@ class myPromise {
   onRejectedCallbacks: any[];
   onFulfilledCallbacks: any[];
   static deferred: () => {};
+  static resolve: (value: any) => myPromise;
+  static reject: (reason: any) => myPromise;
 
   constructor(fnc) {
     // 自身状态
@@ -357,5 +359,7 @@ myPromise.deferred = function () {
   });
   return result;
 };
-
-module.exports = myPromise;
+export {
+  myPromise
+}
+// module.exports = myPromise;
