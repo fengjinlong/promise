@@ -1,5 +1,5 @@
 // let promise = new Promise(() => {}) 参数 fnc
-export class myPromise {
+class myPromise {
   // 状态
   static PENDING = "pending";
   static FULFILLED = "fulfilled";
@@ -8,6 +8,7 @@ export class myPromise {
   PromiseResult: any;
   onRejectedCallbacks: any[];
   onFulfilledCallbacks: any[];
+  static deferred: () => {};
 
   constructor(fnc) {
     // 自身状态
@@ -338,12 +339,23 @@ function resolvePromise(promise2, x, resolve, reject) {
 // fulfilled 100
 // fulfilled 300
 
-let p1 = new myPromise((resolve, reject) => {
-  resolve(10);
-});
-p1.then((res) => {
-  console.log("fulfilled", res);
-  return 2 * res;
-}).then((res) => {
-  console.log("fulfilled", res);
-});
+// let p1 = new myPromise((resolve, reject) => {
+//   resolve(10);
+// });
+// p1.then((res) => {
+//   console.log("fulfilled", res);
+//   return 2 * res;
+// }).then((res) => {
+//   console.log("fulfilled", res);
+// });
+
+myPromise.deferred = function () {
+  let result:any = {};
+  result.promise = new myPromise((resolve, reject) => {
+    result.resolve = resolve;
+    result.reject = reject;
+  });
+  return result;
+};
+
+module.exports = myPromise;

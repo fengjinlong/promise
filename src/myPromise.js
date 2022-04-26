@@ -1,6 +1,3 @@
-"use strict";
-exports.__esModule = true;
-exports.myPromise = void 0;
 // let promise = new Promise(() => {}) 参数 fnc
 var myPromise = /** @class */ (function () {
     function myPromise(fnc) {
@@ -113,7 +110,6 @@ var myPromise = /** @class */ (function () {
     myPromise.REJECTED = "rejected";
     return myPromise;
 }());
-exports.myPromise = myPromise;
 /**
  * 对resolve()、reject() 进行改造增强 针对resolve()和reject()中不同值情况 进行处理
  * @param  {promise} promise2 promise1.then方法返回的新的promise对象
@@ -337,12 +333,21 @@ function resolvePromise(promise2, x, resolve, reject) {
 // })
 // fulfilled 100
 // fulfilled 300
-var p1 = new myPromise(function (resolve, reject) {
-    resolve(10);
-});
-p1.then(function (res) {
-    console.log("fulfilled", res);
-    return 2 * res;
-}).then(function (res) {
-    console.log("fulfilled", res);
-});
+// let p1 = new myPromise((resolve, reject) => {
+//   resolve(10);
+// });
+// p1.then((res) => {
+//   console.log("fulfilled", res);
+//   return 2 * res;
+// }).then((res) => {
+//   console.log("fulfilled", res);
+// });
+myPromise.deferred = function () {
+    var result = {};
+    result.promise = new myPromise(function (resolve, reject) {
+        result.resolve = resolve;
+        result.reject = reject;
+    });
+    return result;
+};
+module.exports = myPromise;

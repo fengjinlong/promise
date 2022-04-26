@@ -1,34 +1,61 @@
-## then 的 A+ 规范
 
-### then 方法接受两个参数 
+**一个开放的声音标准，可互操作的 JavaScript promises——由实现者实现，供实现者使用**
 
-- promise.then(onFulfilled, onRejected)
+**Promise 表示异步操作的最终结果。`promise`相互作用的主要方式是通过它的 `then` 方法，`then` 注册回调来接收 `promise` 的最终 `value` 或 `promise` 拒绝的原因。**
 
-### 2.2.1 `onFulfilled` and `onRejected` 是可选参数
+**Promises/a + 核心规范没有涉及如何创建、实现或拒绝 `promise`，而是选择专注于提供一个可互操作的 `then` 方法**。
+
+# 1. Terminology 术语
+### 1.1 `promise` 是一个带有 `then` 方法的对象或方法，其行为符合规范
+### 1.2 `thenable` 是一个定义了 `then` 的方法的对象或方法
+### 1.3 `value`  是任何合法的 JavaScript 值(包括undefined, a thenable, or a promise)
+### 1.4 exception 异常 是通过 `throw` 语句抛出的
+### 1.5 `reason` 是表明为什么 `promise` 被拒绝的值
+# 2. Requirements 要求
+### 2.1 状态
+一个 `promise` 有三种状态 `pending, fulfilled, rejected`
+- 2.1.1 当 pending 状态
+  - 2.1.1.1 可以转换 到 `fulfilled, rejected` 状态
+- 2.1.2 当 fulfilled 状态
+  - 2.1.2.1 不能转换到任何其他状态
+  - 2.1.2.2 必须有一个值 value，不能改变
+- 2.1.3 当 rejected 状态
+  - 2.1.3.1 不能转换到任何其他状态
+  - 2.1.3.2 必须有原因 reason，不能改变
+
+### 2.2 then  方法
+**一个 `promise` 必须提供一个 `then` 方法，以获得其当前或最终的 `value or reason` 。**
+
+then 方法接受两个参数 
+```js
+promise.then(onFulfilled, onRejected)
+```
+
+#### 2.2.1 `onFulfilled` and `onRejected` 是可选参数
 
 - `onFulfilled` 不是一个函数，必须忽略它
 - `onRejected` 不是一个函数，必须忽略它
 
-### 2.2.2 如果`onFulfilled` 是一个方法
+#### 2.2.2 如果`onFulfilled` 是一个方法
 
 - 必须在状态改为 fulfilled 后调用，且promise（promsieResult）的结果为它的第一个参数
 - 只能调用一次
 
-### 2.2.3 如果onRejected 是一个方法
+#### 2.2.3 如果onRejected 是一个方法
 
 - 必须在状态改为 rejected 后调用，且被拒绝的结果为它的 第一个参数
 - 只能调用一次
 
-### 2.2.4 `onFulfilled` 和 `onRejected` 需要异步执行
+#### 2.2.4 `onFulfilled` 和 `onRejected` 需要异步执行
 
-### 2.2.5 `onFulfilled`` 及``onRejected` 作为函数，严格模式下，内部没有this，一般模式，this 为全局对象
+#### 2.2.5 `onFulfilled`` 及``onRejected` 作为函数，严格模式下，内部没有this，一般模式，this 为全局对象
 
-### 2.2.6 then 可能被同一个promise 调用多次
+#### 2.2.6 then 可能被同一个promise 调用多次
 
 - 当一个promise转化为fulfilled状态，所有`onFulfilled` callback会按照回调函数通过then添加时的顺序而执行
 - 当一个promise转化为rejected状态，所有onRejected callback会按照回调函数通过then添加时的顺序而执行
 
-### 2.2.7 then 必须返回一个promise
+#### 2.2.7 then 必须返回一个promise
 
 ```js
  promise2 = promise1.then(onFulfilled, onRejected);
@@ -39,7 +66,7 @@
 
 - 2.2.7.3 如果 `onFulfilled` 不是函数且 `promise1` 成功执行， `promise2` 必须成功执行并返回相同的值
 
-- **2.2.7.4** 如果 `onRejected` 不是函数且 `promise1` 拒绝执行， `promise2` 必须拒绝执行并返回相同的据因
+- 2.2.7.4 如果 `onRejected` 不是函数且 `promise1` 拒绝执行， `promise2` 必须拒绝执行并返回相同的据因
 
 ### 2.3 `promise`的解决过程
 
