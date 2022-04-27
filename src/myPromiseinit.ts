@@ -11,6 +11,7 @@ class myPromise {
   static deferred: () => {};
   static resolve: (value: any) => myPromise;
   static reject: (reason: any) => myPromise;
+  catch: (reason: any) => void;
 
   constructor(fnc) {
     // 自身状态
@@ -30,12 +31,6 @@ class myPromise {
       // 注意这里不需要给reject()方法进行this的绑定了，因为这里是直接执行，而不是创建实例后再执行。
       this.reject(e);
     }
-  }
-  catch(onRejected) {
-    return this.then(undefined, onRejected);
-  }
-  finally(cb) {
-    return this.then(cb, cb);
   }
   // 执行 resolve() 和 reject() 可以传参
   resolve(result) {
@@ -358,12 +353,14 @@ function resolvePromise(promise2, x, resolve, reject) {
 // });
 
 myPromise.deferred = function () {
-  let result: any = {};
+  let result:any = {};
   result.promise = new myPromise((resolve, reject) => {
     result.resolve = resolve;
     result.reject = reject;
   });
   return result;
 };
-export { myPromise };
+export {
+  myPromise
+}
 // module.exports = myPromise;

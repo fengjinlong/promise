@@ -1,5 +1,5 @@
 import {myPromise}  from "./myPromise"
-
+// https://juejin.cn/post/7044088065874198536#heading-4
 /**
  * Promise.resolve(value) 将给定的一个值转为Promise对象
  * 1. 如果这个值是一个 promise ，那么将返回这个 promise
@@ -28,5 +28,18 @@ myPromise.reject = function (reason) {
     reject(reason);
   });
 };
+
+/**
+ * Promise.prototype.catch
+ * catch() 方法返回一个Promise，并且处理拒绝的情况，
+ * 它的行为与调用Promise.prototype.then(undefined, onRejected) 相同。
+ * 
+ * Promise.prototype.catch()方法是.then(null, rejection)或.then(undefined, rejection)的别名，用于指定发生错误时的回调函数
+ * 
+*/
+
+myPromise.prototype.catch = function(onRejected) {
+  return new myPromise((undefined, onRejected) => onRejected)
+}
 
 export { myPromise };
